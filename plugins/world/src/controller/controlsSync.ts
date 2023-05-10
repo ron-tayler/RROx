@@ -39,7 +39,7 @@ export class ControlsSynchronizer {
                 );
 
                 for( const coupled of coupledFrames ) {
-                    if( !isEngine( coupled.frame ) || coupled.frame === frame || !coupled.isCoupled )
+                    if(coupled.frame === frame || !coupled.isCoupled )
                         continue;
                     
                     const gameObj = this.plugin.world.data.frameCars[ coupled.index ];
@@ -52,20 +52,26 @@ export class ControlsSynchronizer {
                         // Next world read, the synccontrols will be set correctly
                         ignoredFrames.push( coupled.index );
                     }
+                    
+                    if( frame.controls.brake === undefined) continue;
+                             
+                    const brake = frame.controls.brake;
+                    if( coupled.frame.controls.brake !== undefined && Math.abs( brake - coupled.frame.controls.brake ) > 0.005 )
+                        await this.plugin.world.setControls( gameObj, FrameCarControl.Brake, brake );
+                             
+                    if(!isEngine( coupled.frame ))
+                        continue;
 
                     if( frame.controls.regulator === undefined || frame.controls.reverser === undefined )
                         continue;
     
                     const regulator = frame.controls.regulator;
                     const reverser  = coupled.flipped ? frame.controls.reverser * -1 : frame.controls.reverser;
-                    const brake     = frame.controls.brake;
     
                     if( coupled.frame.controls.regulator !== undefined && Math.abs( regulator - coupled.frame.controls.regulator ) > 0.005 )
                         await this.plugin.world.setControls( gameObj, FrameCarControl.Regulator, regulator );
                     if( coupled.frame.controls.reverser !== undefined && Math.abs( reverser - coupled.frame.controls.reverser ) > 0.005 )
                         await this.plugin.world.setControls( gameObj, FrameCarControl.Reverser, reverser );
-                    if( coupled.frame.controls.brake !== undefined && Math.abs( brake - coupled.frame.controls.brake ) > 0.005 )
-                        await this.plugin.world.setControls( gameObj, FrameCarControl.Brake, brake );
                 }
             }
         }, 500 );
